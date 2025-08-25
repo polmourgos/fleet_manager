@@ -1,0 +1,56 @@
+# Fleet Manager - Git Ignore File
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+node_modules
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Log files
+*.log
+logs/
+
+# Database files (optional - you may want to include sample db)
+# fleet.db
+# *.db
+
+# Backup folders (keep only the latest)
+Fleet_Manager_CLEAN_BACKUP_*/
+Fleet_Manager_PRODUCTION_READY_*/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.temp
+
+# User settings (contains personal preferences)
+user_settings.json
+
+# Test files
+test_*.py
+check_*.py
+*_test.py
+
+# Movement documents (may contain sensitive data)
+Κινήσεις/
