@@ -7,10 +7,12 @@ from datetime import datetime
 from config import THEMES, BUTTON_STYLES, FONT_NORMAL
 
 class ModernButton(tk.Button):
-    """Custom modern button with hover effects and improved styling"""
+    """Custom modern button with hover effects, shadows, and improved styling"""
     
-    def __init__(self, parent, style="primary", **kwargs):
+    def __init__(self, parent, style="primary", theme="light", shadow=True, **kwargs):
         self.style_name = style
+        self.theme = theme
+        self.shadow_enabled = shadow
         button_style = BUTTON_STYLES.get(style, BUTTON_STYLES["primary"]).copy()
         
         # Merge custom kwargs
@@ -21,48 +23,242 @@ class ModernButton(tk.Button):
         # Store original colors for hover effects
         self.original_bg = button_style["bg"]
         self.hover_bg = button_style["activebackground"]
+        self.original_fg = button_style.get("fg", "#ffffff")
+        
+        # Apply modern styling
+        self._apply_modern_styling()
         
         # Bind hover effects
         self.bind("<Enter>", self.on_enter)
         self.bind("<Leave>", self.on_leave)
         self.bind("<Button-1>", self.on_click)
         self.bind("<ButtonRelease-1>", self.on_release)
+        self.bind("<FocusIn>", self.on_focus_in)
+        self.bind("<FocusOut>", self.on_focus_out)
+    
+    def _apply_modern_styling(self):
+        """Apply modern styling effects"""
+        # Configure modern appearance
+        self.configure(
+            font=(FONT_NORMAL[0], FONT_NORMAL[1], "normal"),
+            relief="flat",
+            borderwidth=0,
+            highlightthickness=0,
+            cursor="hand2"
+        )
+        
+        # Add subtle styling based on style
+        if self.style_name == "outline":
+            self.configure(
+                relief="solid",
+                borderwidth=2,
+                highlightthickness=0
+            )
     
     def on_enter(self, event):
-        """Handle mouse enter with smooth transition"""
+        """Handle mouse enter with smooth transition and shadow effect"""
         self.configure(bg=self.hover_bg)
         self.configure(cursor="hand2")
+        
+        # Add visual feedback
+        if self.shadow_enabled:
+            # Simulate elevation by changing relief slightly
+            if self.style_name != "outline":
+                self.configure(relief="raised", borderwidth=1)
     
     def on_leave(self, event):
         """Handle mouse leave"""
         self.configure(bg=self.original_bg)
         self.configure(cursor="")
+        
+        # Remove elevation effect
+        if self.style_name == "outline":
+            self.configure(relief="solid", borderwidth=2)
+        else:
+            self.configure(relief="flat", borderwidth=0)
     
     def on_click(self, event):
-        """Handle button click"""
-        self.configure(relief="sunken")
+        """Handle button click with pressed effect"""
+        # Create pressed effect
+        if self.style_name == "outline":
+            self.configure(relief="sunken", borderwidth=2)
+        else:
+            self.configure(relief="sunken", borderwidth=1)
     
     def on_release(self, event):
         """Handle button release"""
-        self.configure(relief="flat")
+        # Return to normal state
+        if self.style_name == "outline":
+            self.configure(relief="solid", borderwidth=2)
+        else:
+            self.configure(relief="flat", borderwidth=0)
+    
+    def on_focus_in(self, event):
+        """Handle focus in - add focus ring"""
+        if self.style_name == "outline":
+            self.configure(highlightthickness=3, highlightcolor="#3b82f6")
+        else:
+            # Add subtle highlight for solid buttons
+            self.configure(highlightthickness=2, highlightcolor="#ffffff", highlightbackground="#ffffff")
+    
+    def on_focus_out(self, event):
+        """Handle focus out - remove focus ring"""
+        self.configure(highlightthickness=0)
 
 class ModernFrame(tk.Frame):
-    """Custom modern frame with improved styling"""
+    """Custom modern frame with card-like styling and shadows"""
     
-    def __init__(self, parent, theme="light", **kwargs):
+    def __init__(self, parent, theme="light", card=False, shadow=True, **kwargs):
         self.theme = theme
+        self.is_card = card
+        self.shadow_enabled = shadow
         theme_colors = THEMES[theme]
         
-        default_style = {
-            "bg": theme_colors["frame_bg"],
-            "relief": "flat",
-            "borderwidth": 1,
-            "highlightbackground": theme_colors["border"],
-            "highlightthickness": 1
-        }
+        # Default styling for modern frames
+        if card:
+            default_style = {
+                "bg": theme_colors["card_bg"],
+                "relief": "flat",
+                "borderwidth": 0,
+                "highlightbackground": theme_colors["border"],
+                "highlightthickness": 1,
+                "padx": 20,
+                "pady": 15
+            }
+        else:
+            default_style = {
+                "bg": theme_colors["frame_bg"],
+                "relief": "flat",
+                "borderwidth": 0,
+                "highlightbackground": theme_colors["border_light"],
+                "highlightthickness": 0,
+                "padx": 10,
+                "pady": 10
+            }
         
         default_style.update(kwargs)
         super().__init__(parent, **default_style)
+        
+        # Apply additional modern styling
+        self._apply_modern_styling()
+    
+    def _apply_modern_styling(self):
+        """Apply modern visual effects"""
+        if self.is_card:
+            # Simulate card shadow with a subtle border and background effect
+            if self.shadow_enabled:
+                # Create a subtle shadow effect by adjusting the highlight
+                self.configure(
+                    highlightthickness=1,
+                    highlightbackground=THEMES[self.theme]["border"]
+                )
+        
+        # Bind hover effects for interactive cards
+        if self.is_card:
+            self.bind("<Enter>", self.on_card_enter)
+            self.bind("<Leave>", self.on_card_leave)
+    
+    def on_card_enter(self, event):
+        """Handle mouse enter for card hover effect"""
+        if self.is_card and self.shadow_enabled:
+            # Enhance shadow on hover
+            self.configure(
+                highlightthickness=2,
+                highlightbackground=THEMES[self.theme]["select_bg"]
+            )
+    
+    def on_card_leave(self, event):
+        """Handle mouse leave for card"""
+        if self.is_card and self.shadow_enabled:
+            # Return to normal shadow
+            self.configure(
+                highlightthickness=1,
+                highlightbackground=THEMES[self.theme]["border"]
+            )
+
+class ModernEntry(tk.Entry):
+    """Modern entry widget with enhanced styling and focus effects"""
+    
+    def __init__(self, parent, theme="light", placeholder="", **kwargs):
+        self.theme = theme
+        self.placeholder = placeholder
+        self.placeholder_active = False
+        theme_colors = THEMES[theme]
+        
+        # Modern entry styling
+        default_style = {
+            "bg": theme_colors["entry_bg"],
+            "fg": theme_colors["fg"],
+            "relief": "flat",
+            "borderwidth": 2,
+            "highlightthickness": 0,
+            "insertbackground": theme_colors["fg"],
+            "selectbackground": theme_colors["select_bg"],
+            "selectforeground": theme_colors["select_fg"],
+            "font": FONT_NORMAL,
+            "padx": 12,
+            "pady": 8
+        }
+        
+        # Apply border styling
+        default_style["highlightbackground"] = theme_colors["entry_border"]
+        default_style["highlightcolor"] = theme_colors["entry_focus"]
+        default_style["highlightthickness"] = 2
+        
+        default_style.update(kwargs)
+        super().__init__(parent, **default_style)
+        
+        # Set placeholder if provided
+        if self.placeholder:
+            self._set_placeholder()
+        
+        # Bind focus events for modern effects
+        self.bind("<FocusIn>", self.on_focus_in)
+        self.bind("<FocusOut>", self.on_focus_out)
+        self.bind("<Button-1>", self.on_click)
+    
+    def _set_placeholder(self):
+        """Set placeholder text"""
+        if not self.get():
+            self.placeholder_active = True
+            self.configure(fg=THEMES[self.theme]["text_muted"])
+            self.insert(0, self.placeholder)
+    
+    def _clear_placeholder(self):
+        """Clear placeholder text"""
+        if self.placeholder_active and self.get() == self.placeholder:
+            self.placeholder_active = False
+            self.delete(0, tk.END)
+            self.configure(fg=THEMES[self.theme]["fg"])
+    
+    def on_focus_in(self, event):
+        """Handle focus in with modern effects"""
+        self._clear_placeholder()
+        # Enhance border color on focus
+        self.configure(
+            highlightbackground=THEMES[self.theme]["entry_focus"],
+            highlightcolor=THEMES[self.theme]["entry_focus"]
+        )
+    
+    def on_focus_out(self, event):
+        """Handle focus out"""
+        if not self.get() and self.placeholder:
+            self._set_placeholder()
+        # Return to normal border
+        self.configure(
+            highlightbackground=THEMES[self.theme]["entry_border"],
+            highlightcolor=THEMES[self.theme]["entry_border"]
+        )
+    
+    def on_click(self, event):
+        """Handle click"""
+        self._clear_placeholder()
+    
+    def get_value(self):
+        """Get the actual value (excluding placeholder)"""
+        if self.placeholder_active:
+            return ""
+        return self.get()
 
 class SearchableCombobox(ttk.Frame):
     """Enhanced combobox with live search and better UX"""
@@ -244,46 +440,132 @@ class SearchableCombobox(ttk.Frame):
             self.listbox_frame.pack_forget()
             self.dropdown_visible = False
 
-class StatusBar(tk.Frame):
-    """Status bar for showing application status"""
+class ModernHeader(tk.Frame):
+    """Modern header component with improved typography and styling"""
     
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, **kwargs)
+    def __init__(self, parent, title="", subtitle="", theme="light", **kwargs):
+        self.theme = theme
+        theme_colors = THEMES[theme]
+        
+        default_style = {
+            "bg": theme_colors["header_bg"],
+            "relief": "flat",
+            "borderwidth": 0,
+            "highlightthickness": 1,
+            "highlightbackground": theme_colors["border_light"],
+            "padx": 24,
+            "pady": 20
+        }
+        
+        default_style.update(kwargs)
+        super().__init__(parent, **default_style)
+        
+        if title:
+            self.title_label = tk.Label(
+                self,
+                text=title,
+                font=(FONT_TITLE[0], FONT_TITLE[1] + 4, "bold"),
+                fg=theme_colors["fg"],
+                bg=theme_colors["header_bg"]
+            )
+            self.title_label.pack(anchor="w")
+        
+        if subtitle:
+            self.subtitle_label = tk.Label(
+                self,
+                text=subtitle,
+                font=(FONT_NORMAL[0], FONT_NORMAL[1], "normal"),
+                fg=theme_colors["text_secondary"],
+                bg=theme_colors["header_bg"]
+            )
+            self.subtitle_label.pack(anchor="w", pady=(5, 0))
+
+class StatusBar(tk.Frame):
+    """Modern status bar with enhanced styling"""
+    
+    def __init__(self, parent, theme="light", **kwargs):
+        self.theme = theme
+        theme_colors = THEMES[theme]
+        
+        default_style = {
+            "bg": theme_colors["header_bg"],
+            "relief": "flat",
+            "borderwidth": 0,
+            "highlightthickness": 1,
+            "highlightbackground": theme_colors["border_light"],
+            "padx": 0,
+            "pady": 0
+        }
+        
+        default_style.update(kwargs)
+        super().__init__(parent, **default_style)
         
         self.status_var = tk.StringVar()
         self.status_var.set("Έτοιμο")
         
-        # Status label
+        # Modern status label with better styling
         self.status_label = tk.Label(
             self, 
             textvariable=self.status_var,
-            relief="sunken",
+            relief="flat",
             anchor="w",
-            font=("Arial", 9),
-            padx=10
+            font=(FONT_SMALL[0], FONT_SMALL[1], "normal"),
+            fg=theme_colors["text_secondary"],
+            bg=theme_colors["header_bg"],
+            padx=20,
+            pady=8
         )
         self.status_label.pack(side="left", fill="x", expand=True)
         
-        # Time label
+        # Separator
+        separator = tk.Frame(
+            self,
+            width=1,
+            bg=theme_colors["border"],
+            relief="flat"
+        )
+        separator.pack(side="right", fill="y", padx=5)
+        
+        # Modern time label
         self.time_var = tk.StringVar()
         self.time_label = tk.Label(
             self,
             textvariable=self.time_var,
-            relief="sunken",
+            relief="flat",
             anchor="e",
-            font=("Arial", 9),
-            padx=10
+            font=(FONT_SMALL[0], FONT_SMALL[1], "normal"),
+            fg=theme_colors["text_muted"],
+            bg=theme_colors["header_bg"],
+            padx=20,
+            pady=8
         )
         self.time_label.pack(side="right")
         
         # Update time
         self.update_time()
     
-    def set_status(self, message):
-        """Set status message"""
+    def set_status(self, message, status_type="info"):
+        """Set status message with type-based styling"""
         self.status_var.set(message)
+        
+        # Apply color based on status type
+        theme_colors = THEMES[self.theme]
+        if status_type == "success":
+            self.status_label.configure(fg=theme_colors["success"])
+        elif status_type == "warning":
+            self.status_label.configure(fg=theme_colors["warning"])
+        elif status_type == "error":
+            self.status_label.configure(fg=theme_colors["danger"])
+        else:
+            self.status_label.configure(fg=theme_colors["text_secondary"])
+        
         # Auto-clear after 5 seconds
-        self.after(5000, lambda: self.status_var.set("Έτοιμο"))
+        self.after(5000, lambda: self._reset_status())
+    
+    def _reset_status(self):
+        """Reset status to default"""
+        self.status_var.set("Έτοιμο")
+        self.status_label.configure(fg=THEMES[self.theme]["text_secondary"])
     
     def update_time(self):
         """Update time display"""
