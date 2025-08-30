@@ -4210,6 +4210,8 @@ class FleetManagerImproved(ValidationMixin):
         self.mov_route_entry.delete(0, tk.END)
         if hasattr(self, 'mov_purpose_combobox'):
             self.mov_purpose_combobox.set("")
+            # Επαναφόρτωση όλων των σκοπών
+            self.mov_purpose_combobox.set_values(self.db.get_purpose_names(active_only=True))
     
     def _auto_fill_last_km(self, *args):
         """Auto-fill last recorded kilometers for selected vehicle"""
