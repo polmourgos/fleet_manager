@@ -24,7 +24,7 @@ import csv
 # Import custom modules
 from database import DatabaseManager
 from ui_components import (
-    ModernButton, ModernFrame, SearchableCombobox, 
+    ModernButton, ModernFrame, ModernEntry, ModernHeader, SearchableCombobox, 
     StatusBar, ProgressDialog, ConfirmDialog, ValidationMixin, TooltipManager
 )
 from utils import (
@@ -398,9 +398,9 @@ class FleetManagerImproved(ValidationMixin):
         return False
     
     def _build_main_ui(self):
-        """Build the main user interface"""
-        # Create main container
-        self.main_container = tk.Frame(self.root, bg=THEMES[self.current_theme]["bg"])
+        """Build the main user interface with modern styling"""
+        # Create main container with modern frame
+        self.main_container = ModernFrame(self.root, theme=self.current_theme)
         self.main_container.pack(fill="both", expand=True)
         
         # Create menu bar
@@ -409,15 +409,21 @@ class FleetManagerImproved(ValidationMixin):
         # Create tab control
         self._create_tab_control()
         
-        # Create status bar with tank indicator
-        self.status_bar = StatusBar(self.main_container, bg=THEMES[self.current_theme]["bg"])
+        # Create modern status bar with tank indicator
+        self.status_bar = StatusBar(self.main_container, theme=self.current_theme)
         self.status_bar.pack(side="bottom", fill="x")
         
-        # Add tank indicator to status bar
-        self.tank_indicator = tk.Label(self.status_bar, text="⛽ Φόρτωση...", 
-                                      font=FONT_NORMAL, bg=THEMES[self.current_theme]["bg"],
-                                      fg=THEMES[self.current_theme]["fg"])
-        self.tank_indicator.pack(side="right", padx=10)
+        # Add tank indicator to status bar with modern styling
+        self.tank_indicator = tk.Label(
+            self.status_bar, 
+            text="⛽ Φόρτωση...", 
+            font=FONT_SMALL,
+            bg=THEMES[self.current_theme]["header_bg"],
+            fg=THEMES[self.current_theme]["text_muted"],
+            padx=15,
+            pady=8
+        )
+        self.tank_indicator.pack(side="right", padx=0)
         
         self.status_bar.set_status("Εφαρμογή φορτώθηκε επιτυχώς")
     
@@ -496,31 +502,38 @@ class FleetManagerImproved(ValidationMixin):
         self._change_theme(themes_sequence[next_index])
     
     def _create_tab_control(self):
-        """Create main tab control with beautiful colors"""
+        """Create main tab control with modern styling"""
         # Configure ttk styles
         style = ttk.Style()
         style.theme_use('clam')
         
-        # Configure tab styling with soft colors
+        theme_colors = THEMES[self.current_theme]
+        
+        # Configure modern tab styling
         style.configure('TNotebook', 
-                       background=THEMES[self.current_theme]["bg"],
-                       borderwidth=0)
+                       background=theme_colors["bg"],
+                       borderwidth=0,
+                       tabmargins=[0, 0, 0, 0])
         
         style.configure('TNotebook.Tab', 
-                       padding=[20, 12], 
-                       font=FONT_NORMAL,
-                       background='#F5F5F5',  # Ουδέτερο γκρι για ανενεργές καρτέλες
-                       foreground='#2C3E50',   # Σκούρο γκρι κείμενο
-                       borderwidth=1)
+                       padding=[24, 16], 
+                       font=(FONT_NORMAL[0], FONT_NORMAL[1], "normal"),
+                       background=theme_colors["frame_bg"],
+                       foreground=theme_colors["text_secondary"],
+                       borderwidth=0,
+                       relief="flat")
         
         style.configure('TNotebook.Tab', 
                        focuscolor='none')
         
+        # Modern tab hover and selection effects
         style.map('TNotebook.Tab',
-                 background=[('selected', '#34495E'),     # Σκούρο γκρι-μπλε για ενεργή καρτέλα
-                            ('active', '#BDC3C7')],       # Ανοιχτό γκρι για hover
-                 foreground=[('selected', 'white'),       # Λευκό κείμενο για ενεργή καρτέλα
-                            ('active', '#2C3E50')])
+                 background=[('selected', theme_colors["select_bg"]),
+                            ('active', theme_colors["border_light"])],
+                 foreground=[('selected', theme_colors["select_fg"]),
+                            ('active', theme_colors["fg"])],
+                 relief=[('selected', 'flat'),
+                        ('active', 'flat')])
         
         self.tab_control = ttk.Notebook(self.main_container, style='TNotebook')
         
@@ -673,7 +686,7 @@ class FleetManagerImproved(ValidationMixin):
     
     def _create_movement_form(self, parent):
         """Create new movement form with improved validation"""
-        form_frame = ModernFrame(parent, theme=self.current_theme)
+        form_frame = ModernFrame(parent, theme=self.current_theme, card=True, shadow=True)
         form_frame.pack(fill="x", padx=20, pady=20)
         
         # Title
@@ -819,7 +832,7 @@ class FleetManagerImproved(ValidationMixin):
     
     def _create_active_movements_section(self, parent):
         """Create active movements section"""
-        active_frame = ModernFrame(parent, theme=self.current_theme)
+        active_frame = ModernFrame(parent, theme=self.current_theme, card=True, shadow=True)
         active_frame.pack(fill="both", expand=True, padx=20, pady=10)
         
         # Title
@@ -4632,7 +4645,7 @@ class FleetManagerImproved(ValidationMixin):
                 "purple": "Μωβ"
             }
             
-            self.status_bar.set_status(f"Θέμα άλλαξε σε: {theme_names.get(theme_name, theme_name)}")
+            self.status_bar.set_status(f"Θέμα άλλαξε σε: {theme_names.get(theme_name, theme_name)}", "success")
             log_user_action("Theme changed", theme_name)
             
         except Exception as e:
@@ -4644,14 +4657,54 @@ class FleetManagerImproved(ValidationMixin):
         try:
             widget_class = widget.winfo_class()
             
+            # Handle different widget types with modern styling
             if widget_class in ["Frame", "Toplevel"]:
-                widget.configure(bg=theme["bg"])
+                # Check if it's a modern component
+                if hasattr(widget, 'theme'):
+                    widget.theme = self.current_theme
+                if hasattr(widget, 'is_card') and widget.is_card:
+                    widget.configure(bg=theme["card_bg"])
+                elif hasattr(widget, '_apply_modern_styling'):
+                    widget.configure(bg=theme["frame_bg"])
+                    widget._apply_modern_styling()
+                else:
+                    widget.configure(bg=theme["bg"])
+                    
             elif widget_class == "Label":
+                # Handle different label types
                 widget.configure(bg=theme["bg"], fg=theme["fg"])
+                
             elif widget_class == "Button":
-                widget.configure(bg=theme["button_bg"], fg=theme["button_fg"])
+                # Handle modern buttons
+                if hasattr(widget, 'theme'):
+                    widget.theme = self.current_theme
+                if hasattr(widget, 'style_name'):
+                    # Update modern button styling
+                    style = widget.style_name
+                    if style in BUTTON_STYLES:
+                        button_style = BUTTON_STYLES[style]
+                        widget.configure(
+                            bg=button_style["bg"], 
+                            fg=button_style["fg"],
+                            activebackground=button_style["activebackground"]
+                        )
+                        widget.original_bg = button_style["bg"]
+                        widget.hover_bg = button_style["activebackground"]
+                else:
+                    widget.configure(bg=theme["button_bg_solid"], fg=theme["button_fg"])
+                    
             elif widget_class == "Entry":
-                widget.configure(bg=theme["entry_bg"], fg=theme["fg"])
+                # Handle modern entries
+                if hasattr(widget, 'theme'):
+                    widget.theme = self.current_theme
+                    widget.configure(
+                        bg=theme["entry_bg"], 
+                        fg=theme["fg"],
+                        highlightbackground=theme["entry_border"],
+                        highlightcolor=theme["entry_focus"]
+                    )
+                else:
+                    widget.configure(bg=theme["entry_bg"], fg=theme["fg"])
             
             # Update children
             for child in widget.winfo_children():
